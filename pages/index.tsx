@@ -15,7 +15,7 @@ const Home: NextPage = () => {
 		if (!user && !loading) {
 			router.push('/login');
 		}
-	}, [loading, user]);
+	}, [loading, user, router]);
 
 	return loading ? (
 		<Layout>
