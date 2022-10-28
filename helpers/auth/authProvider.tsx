@@ -4,7 +4,7 @@ import {
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword,
 	signOut,
-	browserLocalPersistence,
+
 } from 'firebase/auth';
 import {useState, useEffect} from 'react';
 import {AuthContext, AuthProviderProps} from '../../context/AuthUserContext';

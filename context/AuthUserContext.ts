@@ -28,7 +28,3 @@ export const AuthContext = createContext<AuthContextModel>({} as AuthContextMode
 export function useAuth(): AuthContextModel {
 	return useContext(AuthContext);
 }
-
-export const useUserContext = (): UserContextState => {
-	return useContext(UserStateContext);
-};

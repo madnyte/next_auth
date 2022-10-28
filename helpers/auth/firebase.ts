@@ -1,5 +1,4 @@
 import {FirebaseOptions, initializeApp} from 'firebase/app';
-import {getAuth} from 'firebase/auth';
 
 const firebaseCredentials: FirebaseOptions = {
 	apiKey: process.env.NEXT_PUBLIC_FIREBASE_PUBLIC_API_KEY,

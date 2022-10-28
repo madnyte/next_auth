@@ -1,6 +1,5 @@
-import {useRouter} from 'next/router';
-import {useEffect, useState} from 'react';
 import {useAuth} from '../context/AuthUserContext';
+import React from "react";
 
 export interface LayoutProps {
 	children: React.ReactNode;
