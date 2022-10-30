@@ -1,31 +1,30 @@
-import type {NextPage} from 'next';
 import {useRouter} from 'next/router';
-import {useEffect} from 'react';
-import Layout from '../components/Layout';
-import {useAuth} from '../context/AuthUserContext';
-import Employee from './employee';
-import User from './user';
+import {useAuthUser} from "@react-query-firebase/auth";
+import auth from "../helpers/auth/firebase";
+import {useEffect} from "react";
+import Layout from "../components/Layout";
 
-const Home: NextPage = () => {
-	const router = useRouter();
+const Home = () => {
+    const {data, isLoading} = useAuthUser(["user"], auth);
+    const router = useRouter();
 
-	const {user, loading, role} = useAuth();
+    useEffect(() => {
+        if(!isLoading) {
+            if (typeof data === 'undefined') {
+                router.push("/login")
+            } else if (data == null) {
+                router.push("/login")
+            } else if (data) {
+                router.push("/dashboard")
+            }
+        }
+    }, [router, data, isLoading])
 
-	useEffect(() => {
-		if (!user && !loading) {
-			router.push('/login');
-		}
-	}, [loading, user, router]);
-
-	return loading ? (
-		<Layout>
-			<h4>loading...</h4>
-		</Layout>
-	) : user != null && role ? (
-		<Employee></Employee>
-	) : (
-		<User></User>
-	);
+    if (isLoading) {
+        return <Layout>
+            loading...
+        </Layout>
+    }
 };
 
 export default Home;

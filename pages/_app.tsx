@@ -1,14 +1,15 @@
 import '../styles/globals.css';
-// import '../styles/style.css';
 import type {AppProps} from 'next/app';
-import AuthProvider from '../helpers/auth/authProvider';
+import {QueryClient, QueryClientProvider} from "react-query";
+
+const queryClient = new QueryClient()
 
 function MyApp({Component, pageProps}: AppProps) {
-	return (
-		<AuthProvider>
-			<Component {...pageProps} />
-		</AuthProvider>
-	);
+    return (
+        <QueryClientProvider client={queryClient}>
+            <Component {...pageProps} />
+        </QueryClientProvider>
+    );
 }
 
 export default MyApp;

@@ -1,5 +1,4 @@
 import {
-	getAuth,
 	User,
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword,
@@ -8,9 +7,8 @@ import {
 } from 'firebase/auth';
 import {useState, useEffect} from 'react';
 import {AuthContext, AuthProviderProps} from '../../context/AuthUserContext';
-import firebaseApp from './firebase';
+import auth from "./firebase";
 
-const auth = getAuth(firebaseApp);
 
 const AuthProvider = ({children}: AuthProviderProps) => {
 	const [user, setUser] = useState<User | null>(null);
