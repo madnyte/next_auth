@@ -244,7 +244,7 @@ const Register: React.FC<RegisterProps> = ({changeLogin}) => {
 
                 <p className="text-sm sm:text-base lg:text-lg 2xl:text-2xl">
                     {"Already have an account? "}
-                    <Link href="components/register">
+                    <Link href="">
                         <a onClick={changeLogin}
                            className="text-base text-blue-700 underline sm:text-lg lg:text-xl 2xl:text-2xl">Login</a>
                     </Link>

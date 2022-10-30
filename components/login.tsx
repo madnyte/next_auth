@@ -2,7 +2,7 @@ import {useRouter} from 'next/router';
 import {z} from 'zod';
 import {SubmitHandler, useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
-import { useState} from 'react';
+import React, { useState} from 'react';
 import Link from "next/link";
 import {ConfirmationResult, RecaptchaVerifier} from "firebase/auth";
 import {
@@ -239,7 +239,7 @@ const Login: React.FC<LoginProps> = ({changeLogin}) => {
 
                     <p className="text-sm sm:text-base lg:text-lg 2xl:text-2xl">
                         {"Don't have an account? "}
-                        <Link href="components/login" >
+                        <Link href="" >
                             <a onClick={changeLogin} className="text-base text-blue-700 underline sm:text-lg lg:text-xl 2xl:text-2xl">Register</a>
                         </Link>
                     </p>
