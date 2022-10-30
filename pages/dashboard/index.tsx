@@ -15,15 +15,16 @@ const Dashboard: NextPage = () => {
 
 
     useEffect(() => {
+        if (!data && !isLoading) {
+            router.push("/")
+        }
+
         data?.getIdTokenResult(true).then(user => {
             const obj = user.claims;
             setIsUser(Object.hasOwn(obj, 'isUser'));
             setLoading(false)
         })
 
-        if (!data) {
-            router.push("/")
-        }
     }, [router,data,isLoading])
 
     if (isLoading) {
