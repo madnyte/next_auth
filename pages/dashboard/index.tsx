@@ -2,8 +2,8 @@ import {useAuthUser} from "@react-query-firebase/auth";
 import auth from "../../helpers/auth/firebase";
 import {useEffect, useState} from "react";
 import Layout from "../../components/Layout";
-import EmployeeDashboard from "./employee";
-import UserDashboard from "./user";
+import EmployeeDashboard from "../../components/employee";
+import UserDashboard from "../../components/user";
 import {User} from "firebase/auth";
 import {useRouter} from "next/router";
 import {NextPage} from "next";
@@ -38,8 +38,8 @@ const Dashboard: NextPage = () => {
     }
 
     return (    <Layout>
-        {(isUser && user) && <UserDashboard user={user}></UserDashboard>}
-        {(!isUser && user) && <EmployeeDashboard user={user}></EmployeeDashboard>}
+        {(isUser && user && data) && <UserDashboard user={user}></UserDashboard>}
+        {(!isUser && user && data) && <EmployeeDashboard user={user}></EmployeeDashboard>}
     </Layout>)
 }
 export default Dashboard

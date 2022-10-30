@@ -1,42 +1,40 @@
-import type {NextPage} from 'next';
 import {useRouter} from 'next/router';
+import {z} from 'zod';
 import {SubmitHandler, useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {getFunctions, httpsCallable} from 'firebase/functions';
-import Layout from '../../components/Layout';
-import {useState} from 'react';
-import Card from "../../components/Card";
-import Button from "../../components/Button";
+import { useState} from 'react';
 import Link from "next/link";
+import {ConfirmationResult, RecaptchaVerifier} from "firebase/auth";
 import {
-    ConfirmationResult,
-    RecaptchaVerifier,
-} from "firebase/auth";
-import auth from "../../helpers/auth/firebase";
-import {
-    useAuthCreateUserWithEmailAndPassword,
-    useAuthSignInWithPhoneNumber
+    useAuthSignInWithEmailAndPassword,
+    useAuthSignInWithPhoneNumber,
 } from "@react-query-firebase/auth";
-import {z} from "zod";
+import Card from './Card';
+import auth from "../helpers/auth/firebase";
+import Button from "./Button";
 
-const emailRegSchema = z.object({
-    regEmail: z.string().min(1, "email is required").email("invalid email address"),
-    regPassword: z.string().min(8, "password is too short")
+const emailSchema = z.object({
+    email: z.string().email("invalid email address"),
+    password: z.string().min(8, "password is too short")
 })
 
-const phoneRegSchema = z.object({
+const phoneSchema = z.object({
     phone: z.string().min(10, "invalid number"),
 })
 
-const otpRegSchema = z.object({
+const otpSchema = z.object({
     otp: z.string().length(6, "invalid otp"),
 })
 
-type EmailFormSchema = z.infer<typeof emailRegSchema>;
-type PhoneFormSchema = z.infer<typeof phoneRegSchema>;
-type OtpFormSchema = z.infer<typeof otpRegSchema>;
+type EmailFormSchema = z.infer<typeof emailSchema>;
+type PhoneFormSchema = z.infer<typeof phoneSchema>;
+type OtpFormSchema = z.infer<typeof otpSchema>;
 
-const Register: NextPage = () => {
+interface LoginProps {
+    changeLogin: () => void
+}
+
+const Login: React.FC<LoginProps> = ({changeLogin}) => {
     const router = useRouter();
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState('');
@@ -44,15 +42,16 @@ const Register: NextPage = () => {
     const [isOtp, setOtp] = useState(false);
     const [confirm, setConfirm] = useState<ConfirmationResult | null>(null);
 
-    const emailMutation = useAuthCreateUserWithEmailAndPassword(auth, {
+
+    const emailMutation = useAuthSignInWithEmailAndPassword(auth, {
         onSuccess() {
-            router.push("/")
+            router.push("/dashboard")
         },
         onError(error) {
             setError(error.code)
         }
     })
-    const phoneRegMutation = useAuthSignInWithPhoneNumber(
+    const phoneMutation = useAuthSignInWithPhoneNumber(
         auth, {
             onSuccess(result) {
                 setOtp((state) => !state)
@@ -64,16 +63,16 @@ const Register: NextPage = () => {
             }
         })
 
-
     const {
         register: emailRegister,
         handleSubmit: emailHandleSubmit,
         formState: {errors: emailErrors, isSubmitting: emailIsSubmitting},
     } = useForm<EmailFormSchema>({
-        resolver: zodResolver(emailRegSchema),
+        resolver: zodResolver(emailSchema),
+        mode: 'onChange',
         defaultValues: {
-            regEmail: "",
-            regPassword: "",
+            email: "",
+            password: "",
         },
     });
 
@@ -82,7 +81,7 @@ const Register: NextPage = () => {
         handleSubmit: phoneHandleSubmit,
         formState: {errors: phoneErrors, isSubmitting: phoneIsSubmitting},
     } = useForm<PhoneFormSchema>({
-        resolver: zodResolver(phoneRegSchema),
+        resolver: zodResolver(phoneSchema),
         defaultValues: {
             phone: "",
         },
@@ -93,11 +92,46 @@ const Register: NextPage = () => {
         handleSubmit: otpHandleSubmit,
         formState: {errors: otpErrors, isSubmitting: otpIsSubmitting},
     } = useForm<OtpFormSchema>({
-        resolver: zodResolver(otpRegSchema),
+        resolver: zodResolver(otpSchema),
         defaultValues: {
             otp: ""
         },
     });
+
+    const buttonFunction = () => {
+        if (isPhone && !isOtp) return phoneHandleSubmit(onPhoneLogin)
+        else if (isPhone && isOtp) return otpHandleSubmit(onOtpVerify)
+        return emailHandleSubmit(onLogin)
+    }
+
+    const onLogin: SubmitHandler<EmailFormSchema> = async data => {
+        setError(null);
+        setMessage('');
+        await emailMutation.mutate({email: data.email as string, password: data.password as string})
+    };
+
+    const onPhoneLogin: SubmitHandler<PhoneFormSchema> = async data => {
+        setError(null);
+        setMessage('');
+        await phoneMutation.mutate({
+            phoneNumber: data.phone,
+            appVerifier: new RecaptchaVerifier("recaptcha-container", {'size': 'invisible',}, auth)
+        })
+    };
+
+    const onOtpVerify: SubmitHandler<OtpFormSchema> = async data => {
+        setError(null);
+        setMessage('');
+        await confirm?.confirm(data.otp)
+            .then(() => {
+                setMessage('Registration successful');
+                setOtp(false)
+                setConfirm(null)
+                router.push("/dashboard")
+            }).catch((error) => {
+                setError(error.code);
+            })
+    }
 
     const onChangeLoginMethod = () => {
         setError(null);
@@ -105,45 +139,11 @@ const Register: NextPage = () => {
         setLoginMethod((state) => !state);
     }
 
-    const onRegisterNumber: SubmitHandler<PhoneFormSchema> = async data => {
-        setError(null);
-        setMessage('');
-        phoneRegMutation.mutate({
-            phoneNumber: data.phone as string,
-            appVerifier: new RecaptchaVerifier("recaptcha-container", {'size': 'invisible',}, auth)
-        })
-    };
-
-    const onVerifyOtp: SubmitHandler<OtpFormSchema> = async data => {
-        setError(null);
-        setMessage('');
-        const user = await confirm?.confirm(data.otp)
-            .catch((error) => {
-                setError(error.code);
-            })
-        const functions = getFunctions();
-        const addUserRole = httpsCallable(functions, 'addUserRole');
-        await addUserRole(user)
-            .then(() => {
-                setMessage('Registration successful');
-                setOtp(false)
-                setConfirm(null)
-                router.push("/")
-            }).catch((error) => {
-                setError(error.code);
-            })
-    }
-
-    const onRegister: SubmitHandler<EmailFormSchema> = async data => {
-        setError(null);
-        setMessage('');
-        emailMutation.mutate({email: data.regEmail as string, password: data.regPassword as string})
-    };
-
     return (
-        <Layout>
             <Card>
-                <h2 className="text-xl font-bold sm:text-2xl lg:text-3xl 2xl:text-4xl">Get Started.</h2>
+                <h2 className="text-xl font-bold sm:text-2xl lg:text-3xl 2xl:text-4xl">Welcome Back...</h2>
+                <h3 className="text-sm text-gray-500 sm:text-base lg:text-lg 2xl:text-2xl">Enter your details to sign in
+                    to your account</h3>
                 {message && <p className="text-sm text-green-500 font-bold sm:text-base lg:text-lg 2xl:text-2xl">
                     {message}
                 </p>}
@@ -154,7 +154,7 @@ const Register: NextPage = () => {
                     {isPhone ? null : <div className="flex flex-col gap-2 sm:gap-4">
                         <input
                             type="email"
-                            {...emailRegister('regEmail',)}
+                            {...emailRegister('email')}
                             onChange={() => {
                                 setError(null);
                                 setMessage('');
@@ -163,13 +163,13 @@ const Register: NextPage = () => {
                             disabled={otpIsSubmitting || phoneIsSubmitting || emailIsSubmitting}
                             placeholder="email address"
                         />
-                        {emailErrors.regEmail &&
-                            <p className="text-sm text-red-600 mt-1 sm:text-base lg:text-lg 2xl:text-2xl">{emailErrors.regEmail.message}</p>}
+                        {emailErrors.email &&
+                            <p className="text-sm text-red-600 mt-1 sm:text-base lg:text-lg 2xl:text-2xl">{emailErrors.email.message}</p>}
                     </div>}
                     {isPhone ? null : <div className="flex flex-col gap-2 sm:gap-4">
                         <input
                             type="password"
-                            {...emailRegister('regPassword',)}
+                            {...emailRegister('password',)}
                             className="bg-blue-50 border border-gray-400 text-sm p-1 sm:text-3xl"
                             onChange={() => {
                                 setError(null);
@@ -178,8 +178,8 @@ const Register: NextPage = () => {
                             disabled={otpIsSubmitting || phoneIsSubmitting || emailIsSubmitting}
                             placeholder="password"
                         />
-                        {emailErrors.regPassword && (
-                            <p className="text-sm text-red-600 mt-1 sm:text-base lg:text-lg 2xl:text-2xl">{emailErrors.regPassword.message}</p>
+                        {emailErrors.password && (
+                            <p className="text-sm text-red-600 mt-1 sm:text-base lg:text-lg 2xl:text-2xl">{emailErrors.password.message}</p>
                         )}
                     </div>}
 
@@ -215,12 +215,9 @@ const Register: NextPage = () => {
                             <p className="text-sm text-red-600 mt-1 sm:text-base lg:text-lg 2xl:text-2xl">{otpErrors.otp.message}</p>}
                     </div> : null}
 
+
                     <Button onClick={
-                        () => {
-                            if (isPhone && !isOtp) phoneHandleSubmit(onRegisterNumber)()
-                            else if (isPhone && isOtp) otpHandleSubmit(onVerifyOtp)()
-                            else emailHandleSubmit(onRegister)()
-                        }
+                        buttonFunction()
                     }>
                         {emailIsSubmitting || phoneIsSubmitting || otpIsSubmitting ? (
                                 <div
@@ -229,11 +226,11 @@ const Register: NextPage = () => {
                                 >
                                 </div>
                             )
-                            : <p className="text-sm text-center sm:text-base lg:text-lg 2xl:text-2xl">Register</p>}
+                            : (<p className="text-sm text-center sm:text-base lg:text-lg 2xl:text-2xl">Login</p>)}
                     </Button>
 
                     <p className="text-sm self-center font-bold sm:text-base lg:text-lg 2xl:text-2xl">
-                        - Or Register with -
+                        - Or Login with -
                     </p>
 
                     <Button onClick={onChangeLoginMethod}>
@@ -241,15 +238,14 @@ const Register: NextPage = () => {
                     </Button>
 
                     <p className="text-sm sm:text-base lg:text-lg 2xl:text-2xl">
-                        {"Already have an account? "}
-                        <Link href="/login">
-                            <a className="text-base text-blue-700 underline sm:text-lg lg:text-xl 2xl:text-2xl">Login</a>
+                        {"Don't have an account? "}
+                        <Link href="components/login" >
+                            <a onClick={changeLogin} className="text-base text-blue-700 underline sm:text-lg lg:text-xl 2xl:text-2xl">Register</a>
                         </Link>
                     </p>
                 </form>
             </Card>
-        </Layout>
     );
 };
 
-export default Register;
+export default Login;

@@ -1,20 +1,24 @@
 import {useRouter} from 'next/router';
 import {useAuthUser} from "@react-query-firebase/auth";
 import auth from "../helpers/auth/firebase";
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 import Layout from "../components/Layout";
+import Login from "../components/login";
+import Register from "../components/register";
+import {NextPage} from "next";
 
-const Home = () => {
+const Home: NextPage = () => {
     const {data, isLoading} = useAuthUser(["user"], auth);
+    const [isLogin, setLogin] = useState(true);
     const router = useRouter();
 
+    const changeLogin = () => {
+        setLogin(!isLogin)
+    }
+
     useEffect(() => {
-        if(!isLoading) {
-            if (typeof data === 'undefined') {
-                router.push("/login")
-            } else if (data == null) {
-                router.push("/login")
-            } else if (data) {
+        if (!isLoading) {
+            if (data) {
                 router.push("/dashboard")
             }
         }
@@ -25,6 +29,15 @@ const Home = () => {
             loading...
         </Layout>
     }
+
+    return <Layout>
+        {
+            (isLogin && !data) && <Login changeLogin={changeLogin}></Login>
+        }
+        {
+            (!isLogin && !data) && <Register changeLogin={changeLogin}></Register>
+        }
+    </Layout>
 };
 
 export default Home;
