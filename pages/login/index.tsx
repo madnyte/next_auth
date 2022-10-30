@@ -4,7 +4,7 @@ import {z} from 'zod';
 import {SubmitHandler, useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import Layout from '../../components/Layout';
-import {useEffect, useState} from 'react';
+import { useState} from 'react';
 import Card from "../../components/Card";
 import Button from "../../components/Button";
 import Link from "next/link";
@@ -40,12 +40,6 @@ const Login: NextPage = () => {
     const [isOtp, setOtp] = useState(false);
     const [confirm, setConfirm] = useState<ConfirmationResult | null>(null);
 
-    useEffect(() => {
-        if (isSubmitSuccessful) {
-            reset({email: "", password: ""})
-        }
-    })
-
     const emailMutation = useAuthSignInWithEmailAndPassword(auth, {
         onSuccess() {
             router.push("/")
@@ -69,8 +63,7 @@ const Login: NextPage = () => {
     const {
         register: emailRegister,
         handleSubmit: emailHandleSubmit,
-        reset,
-        formState: {errors: emailErrors, isSubmitting: emailIsSubmitting, isSubmitSuccessful},
+        formState: {errors: emailErrors, isSubmitting: emailIsSubmitting},
     } = useForm<EmailFormSchema>({
         resolver: zodResolver(emailSchema),
         mode: 'onChange',
