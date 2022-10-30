@@ -4,7 +4,6 @@ import {useEffect, useState} from "react";
 import Layout from "../../components/Layout";
 import EmployeeDashboard from "../../components/employee";
 import UserDashboard from "../../components/user";
-import {User} from "firebase/auth";
 import {useRouter} from "next/router";
 import {NextPage} from "next";
 
@@ -12,24 +11,20 @@ const Dashboard: NextPage = () => {
     const {data} = useAuthUser(["user"], auth);
     const [isLoading, setLoading] = useState(true)
     const [isUser, setIsUser] = useState<boolean | null>(null)
-    const [user, setUser] = useState<User | null>(null)
     const router = useRouter();
 
 
     useEffect(() => {
-        if (data) {
-            setUser(data)
-        }
         data?.getIdTokenResult(true).then(user => {
             const obj = user.claims;
             setIsUser(Object.hasOwn(obj, 'isUser'));
             setLoading(false)
         })
 
-        if (!data && !user) {
+        if (!data) {
             router.push("/")
         }
-    }, [router,data,isLoading,user])
+    }, [router,data,isLoading])
 
     if (isLoading) {
         return <Layout>
@@ -38,8 +33,8 @@ const Dashboard: NextPage = () => {
     }
 
     return (    <Layout>
-        {(isUser && user && data) && <UserDashboard user={user}></UserDashboard>}
-        {(!isUser && user && data) && <EmployeeDashboard user={user}></EmployeeDashboard>}
+        {(isUser && data) && <UserDashboard user={data}></UserDashboard>}
+        {(!isUser && data) && <EmployeeDashboard user={data}></EmployeeDashboard>}
     </Layout>)
 }
 export default Dashboard
